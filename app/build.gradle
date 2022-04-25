@@ -3,6 +3,13 @@ plugins {
     id 'kotlin-android'
 }
 
+def keystorePropertiesFile = rootProject.file("app/keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+def localProperties = new Properties()
+localProperties.load(new FileInputStream(rootProject.file("local.properties")))
+
 android {
     compileSdk 32
 
@@ -15,6 +22,71 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    signingConfigs {
+        productionRelease {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        def label = "Asteroid"
+        def flavorProductionSigningConfig = signingConfigs.productionRelease
+
+        Qa {
+            dimension "version"
+            applicationIdSuffix ".qa"
+
+            buildConfigField('String', 'BASE_URL', localProperties['URL_BASE_QA'])
+            buildConfigField('String', 'AMBIENTE', localProperties['AMBIENTE_QA'])
+
+            manifestPlaceholders = [label: label]
+
+            signingConfig flavorProductionSigningConfig
+        }
+
+        Stage {
+            dimension "version"
+            applicationIdSuffix ".stage"
+
+            buildConfigField('String', 'BASE_URL', localProperties['URL_BASE_STAGE'])
+            buildConfigField('String', 'AMBIENTE', localProperties['AMBIENTE_STAGE'])
+
+            manifestPlaceholders = [label: label+"-Stage"]
+
+            signingConfig flavorProductionSigningConfig
+        }
+
+        PreProd {
+            dimension "version"
+            applicationIdSuffix ".hml"
+
+            buildConfigField('String', 'BASE_URL', localProperties['URL_BASE_PREPROD'])
+            buildConfigField('String', 'AMBIENTE', localProperties['AMBIENTE_PREPROD'])
+
+            manifestPlaceholders = [label: label+"-PREPROD"]
+
+            signingConfig flavorProductionSigningConfig
+        }
+
+        Prod {
+            dimension "version"
+            applicationIdSuffix ".Prod"
+
+            buildConfigField('String', 'BASE_URL', localProperties['URL_BASE_PROD'])
+            buildConfigField('String', 'AMBIENTE', localProperties['AMBIENTE_PROD'])
+
+            manifestPlaceholders = [label: label+"-Prod"]
+
+            signingConfig flavorProductionSigningConfig
+        }
+    }
+
 
     buildTypes {
         release {
